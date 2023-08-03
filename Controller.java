@@ -2,9 +2,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import javax.swing.Timer;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class constructor
@@ -12,6 +14,8 @@ import java.util.Map;
 public class Controller {
     private VendingMachineView view;
     private VendingMachine vendingMachine;
+    private Set<String> displayedItems = new HashSet<>();
+
 
     public Controller() {
         this.view = new VendingMachineView();
@@ -30,7 +34,7 @@ public class Controller {
             if(vendingMachine != null)  
                 displayVM();
             else 
-                view.displayMessage("error.gif", "Cannot test the machine as it is not created yet.", 1);
+                view.displayMessage("sad.gif", "Cannot test the machine as it is not created yet.", 1);
         });
         
 
@@ -75,7 +79,7 @@ public class Controller {
                 total += money.getValue()*money.getCount();
 
             vendingMachine.setTotalInserted(-total);
-            view.displayMessage(null, "Here's your change: " + total, 1);
+            view.displayMessage("change.gif", "Here's your change: " + total, 1);
             view.initializeView();
         });
 
@@ -95,7 +99,7 @@ public class Controller {
                 view.displayMessage("collectPayment.gif", total + " collected.", 1);
             }
             else
-                view.displayMessage(null, "Nothing to collect.", 1);
+                view.displayMessage("noCollect.gif", "Nothing to collect.", 1);
             
         });
 
@@ -170,9 +174,9 @@ public class Controller {
             if(check && !((SpecialMachine) vendingMachine).getCustomOrder().isEmpty())
                 purchaseCustomOrder();
             else if(((SpecialMachine) vendingMachine).getCustomOrder().isEmpty())
-                view.displayMessage(null, "Nothing to pruchase.", 1);
+                view.displayMessage("noPurchase.gif", "Nothing to pruchase.", 1);
             else
-                view.displayMessage(null, "Not enough stock for " + itemName + ".", 1);
+                view.displayMessage("noStock.gif", "Not enough stock for " + itemName + ".", 1);
         });
 
         /**
@@ -218,10 +222,14 @@ public class Controller {
         if (vendingMachine instanceof SpecialMachine) {
             SpecialMachine specialMachine = (SpecialMachine) vendingMachine;
             double totalCost = 0;
-            List<Item> customOrder = specialMachine.getCustomOrder();
-            customOrder.add(new Bread());
+            ArrayList<Item> customOrder = specialMachine.getCustomOrder();
             Map<String, String> cookingStepsMap = new HashMap<>();
+            ArrayList<String> cookingStepsList = new ArrayList<>();
+            ArrayList<String> gifFilenamesList = new ArrayList<>();
+            Set<String> processedItems = new HashSet<>();
             
+            customOrder.add(new Bread());
+
             cookingStepsMap.put("Bread", "Getting Bun");
             cookingStepsMap.put("Beef Patty", "Grilling the Beef Patty.");
             cookingStepsMap.put("Chicken Patty", "Making the Chicken Patty.");
@@ -230,33 +238,31 @@ public class Controller {
             cookingStepsMap.put("Veggie Patty", "Making the Veggie Patty.");
             cookingStepsMap.put("Cheese", "Melting the cheese.");
             cookingStepsMap.put("Lettuce", "Adding lettuce.");
-            cookingStepsMap.put("Tomatoes", "Slicing tomatoes.");
+            cookingStepsMap.put("Tomato", "Slicing tomatoes.");
             cookingStepsMap.put("Onion Rings", "Topping with onion rings.");
             cookingStepsMap.put("Pickles", "Placing pickles.");
             cookingStepsMap.put("Bacon", "Cooking crispy bacon.");
             cookingStepsMap.put("Egg", "Frying egg.");
-            cookingStepsMap.put("Mushrooms", "Sauteing mushrooms.");
+            cookingStepsMap.put("Mushroom", "Sauteing mushrooms.");
             cookingStepsMap.put("Jalapenos", "Chopping jalapenos.");
             cookingStepsMap.put("Ham", "Layering with ham.");
             cookingStepsMap.put("Mustard", "Drizzling Mustard.");
-            cookingStepsMap.put("Mayonnaise", "Adding a dollop of mayonnaise.");
+            cookingStepsMap.put("Mayo", "Adding a dollop of mayonnaise.");
             cookingStepsMap.put("Ketchup", "Applying Ketchup.");
             cookingStepsMap.put("Siracha", "Adding Siracha.");
             cookingStepsMap.put("BBQ Sauce", "Drizzling BBQ Sauce.");
-    
-            List<String> cookingStepsList = new ArrayList<>();
-            List<String> gifFilenamesList = new ArrayList<>();
+        
             for (Item item : customOrder) {
                 String itemName = item.getName();
                 String cookingStep = cookingStepsMap.getOrDefault(itemName, "");
-                if (!cookingStep.isEmpty()) {
+                if (!cookingStep.isEmpty() && !processedItems.contains(itemName)) {
                     cookingStepsList.add(cookingStep);
-                    String gifFilename = itemName + ".gif"; 
+                    String gifFilename = itemName + ".gif";
                     gifFilenamesList.add(gifFilename);
+                    processedItems.add(itemName);
                     totalCost += item.getPrice();
                 }
             }
-
             if (vendingMachine.getTotalInserted() >= totalCost) {
                 specialMachine.purchaseOrder();
                 vendingMachine.setTotalInserted(-totalCost);
@@ -281,20 +287,27 @@ public class Controller {
         if (nextIndex[0] < cookingStepsList.size()) {
             String cookingStep = cookingStepsList.get(nextIndex[0]);
             String gifFilename = gifFilenamesList.get(nextIndex[0]);
-            view.displayMessage(gifFilename, "" + cookingStep, 1);
+            String itemName = gifFilename.substring(0, gifFilename.lastIndexOf(".gif"));
     
-            nextIndex[0]++;
+            if (!displayedItems.contains(itemName)) {
+                view.displayMessage(gifFilename, "" + cookingStep, 1);
+                displayedItems.add(itemName);
+            }
+    
+            nextIndex[0]++; //Cook next item
             while (nextIndex[0] < cookingStepsList.size() && cookingStepsList.get(nextIndex[0]).equals(cookingStep)) {
                 nextIndex[0]++;
             }
     
-            Timer timer = new Timer(1000, e -> displayCookingSteps(cookingStepsList, gifFilenamesList, nextIndex[0]));
+            Timer timer = new Timer(1000, e -> displayCookingSteps(cookingStepsList, gifFilenamesList, nextIndex[0])); //recursion
             timer.setRepeats(false);
             timer.start();
-        } else {
+        } else { //Clear custom order list
+            displayedItems.clear(); 
             displayVM();
         }
     }
+    
 
     /**
      * Sets up the test machine screen and all the buttons related to it 

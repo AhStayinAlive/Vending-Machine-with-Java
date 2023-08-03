@@ -5,6 +5,8 @@ import javax.swing.border.TitledBorder;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -117,7 +119,7 @@ public class VendingMachineView {
     
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBackground(backgroundColor);
-        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(73,55,22), 10));
+        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(73, 55, 22), 10));
     
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -130,11 +132,12 @@ public class VendingMachineView {
         mainPanel.add(emptyLabel, gbc);
     
         JPanel vendingLabelPanel = new JPanel();
-        JLabel vendingLabel = new JLabel("Vending Machine", SwingConstants.CENTER);
-        vendingLabel.setFont(new Font("Segoe UI", Font.BOLD, 56)); 
-        vendingLabel.setForeground(new Color(73,55,22)); 
+        JLabel vendingLabel = new JLabel("The Burger Machine", SwingConstants.CENTER);
+        Font vendingLabelFont = loadCustomFont("Anybody-Medium.ttf", Font.BOLD, 48);
+        vendingLabel.setFont(vendingLabelFont);
+        vendingLabel.setForeground(new Color(73, 55, 22));
         vendingLabelPanel.add(vendingLabel);
-        vendingLabelPanel.setBackground(new Color(249,213,147));
+        vendingLabelPanel.setBackground(new Color(249, 213, 147));
         mainPanel.add(vendingLabelPanel, gbc);
     
         gbc.gridy = 1;
@@ -143,11 +146,10 @@ public class VendingMachineView {
         JPanel buttonsPanel = new JPanel(new GridLayout(3, 1, 0, 10));
         buttonsPanel.setBackground(new Color(192, 192, 192));
     
-        Font buttonFont = new Font("Segoe UI", Font.PLAIN, 13); 
+        Font buttonFont = loadCustomFont("Anybody-Medium.ttf", Font.PLAIN, 15);
         for (int i = 0; i < 3; i++) {
-            buttons[i].setPreferredSize(new Dimension(180, 40)); 
             buttons[i].setFont(buttonFont);
-            buttons[i].setBackground(new Color(192, 192, 192));
+            buttons[i].setBackground(new Color(73, 55, 22));
             buttonsPanel.add(buttons[i]);
         }
     
@@ -164,8 +166,9 @@ public class VendingMachineView {
     
         gbc.gridy = 4;
         JLabel productionLabel = new JLabel("Ken and Joseph Production", SwingConstants.CENTER);
-        productionLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 20));
-        productionLabel.setForeground(new Color(73,55,22));
+        Font productionLabelFont = loadCustomFont("Anybody-Medium.ttf", Font.BOLD, 25);
+        productionLabel.setFont(productionLabelFont);
+        productionLabel.setForeground(new Color(73, 55, 22));
         mainPanel.add(productionLabel, gbc);
     
         for (int i = 5; i < 10; i++) {
@@ -173,7 +176,7 @@ public class VendingMachineView {
             mainPanel.add(emptyLabel, gbc);
         }
     
-        ImageIcon logoIcon = new ImageIcon("burgermachine.gif"); 
+        ImageIcon logoIcon = new ImageIcon("burgermachine.gif");
         JLabel logoLabel = new JLabel(logoIcon);
         logoLabel.setPreferredSize(new Dimension(300, 300));
     
@@ -191,6 +194,26 @@ public class VendingMachineView {
         frame.add(mainPanel, BorderLayout.CENTER);
         frame.setPreferredSize(new Dimension(789, 369));
         setupFrame();
+    }
+    /**
+     * Loads a custom font and if it cannot be found, it loads a default font
+     *
+     * @param fontFileName The filename
+     * @param style        The font style (bold or plain)
+     * @param size         The font size
+     * @return The custom or default Font
+     * 
+     * */
+    private Font loadCustomFont(String fontFileName, int style, int size) {
+        try {
+            Font customFont = Font.createFont(Font.TRUETYPE_FONT, new File(fontFileName));
+            GraphicsEnvironment graphics = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            graphics.registerFont(customFont);
+            return customFont.deriveFont(style, size);
+        } catch (IOException | FontFormatException e) {
+            System.err.println("Error loading custom font: " + e.getMessage());
+            return new Font("Helvetica Neue", style, size);
+        }
     }
     
     /**
@@ -376,7 +399,7 @@ public class VendingMachineView {
     
         if (machine instanceof SpecialMachine) {
             SpecialMachine specialMachine = (SpecialMachine) machine;
-            int customOrderIndex = 0; // Counter for items in the custom order
+            int customOrderIndex = 0; //Items counter
             for (Item item : machine.getItemList()) {
                 int counter = 0;
                 for (Item check : specialMachine.getCustomOrder()) {
@@ -442,7 +465,8 @@ public class VendingMachineView {
                     itemPanel.add(quantityButtonPanel, constraints);
     
                     double totalPrice = counter * item.getPrice();
-                    JLabel totalPriceLabel = new JLabel("P" + totalPrice);
+                    double totalCalories = counter*  item.getCalories();
+                    JLabel totalPriceLabel = new JLabel("P" + totalPrice + " | Calories: " + totalCalories);
                     totalPriceLabel.setHorizontalAlignment(JLabel.LEFT);
                     constraints.gridx = 2;
                     constraints.gridy = 0;
@@ -459,7 +483,7 @@ public class VendingMachineView {
                     constraints.insets = new Insets(5, 15, 5, 15); 
                     itemPanel.add(separator, constraints);
     
-                    customOrderIndex++; // Increment the counter for items in the custom order
+                    customOrderIndex++; //Increment items counter
     
                     inventoryPanel.add(itemPanel);
                 }

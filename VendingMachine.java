@@ -292,24 +292,22 @@ public class VendingMachine {
     public double purchaseItem(String itemName, double totalInserted) {
         int count;
         double extraAmount, temp;
-    
+
         Item item = getItem(itemName);
         extraAmount = totalInserted - item.getPrice();
         temp = extraAmount;
-    
+
         for (double denomination : denominations) {
             count = (int) (temp / denomination);
             boolean check = false; // Reset check for each denomination
-    
-            for (Money money : moneyStored) {
-                if (money.getValue() == denomination && money.getCount() >= count) {
+
+            for (int i = 0 ; i < moneyStored.size() && !check; i++) {
+                if (moneyStored.get(i).getValue() == denomination && moneyStored.get(i).getCount() >= count) 
                     check = true;
-                    break; // Break out of the loop if enough denomination is found
-                }
             }
             if(check)
                 temp %= denomination*count;
-                
+
             else if (!check) 
                 return totalInserted;
         }
